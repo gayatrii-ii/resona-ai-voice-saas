@@ -1,8 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { parseBuffer } from "music-metadata";
 import { z } from "zod";
-import { polar } from "@/lib/polar";
-import { env } from "@/lib/env";
 import { prisma } from "@/lib/db";
 import { uploadAudio } from "@/lib/r2";
 import { VOICE_CATEGORIES } from "@/features/voices/data/voice-categories";
@@ -28,23 +26,6 @@ export async function POST(request: Request) {
   }
 
   const effectiveOrgId = orgId || userId;
-
-  // Check for active subscription before voice creation (bypass in dev if token is placeholder)
-  if (env.POLAR_ACCESS_TOKEN !== "placeholder") {
-    try {
-      const customerState = await polar.customers.getStateExternal({
-        externalId: effectiveOrgId,
-      });
-      const hasActiveSubscription =
-        (customerState.activeSubscriptions ?? []).length > 0;
-      if (!hasActiveSubscription) {
-        return Response.json({ error: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
-      }
-    } catch {
-      // Customer doesn't exist in Polar yet -> no subscription
-      return Response.json({ error: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
-    }
-  }
 
   const url = new URL(request.url);
 
@@ -170,22 +151,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-
-  // Ingest usage event to Polar (fire-and-forget, don't block response)
-  polar.events
-    .ingest({
-      events: [
-        {
-          name: env.POLAR_METER_VOICE_CREATION,
-          externalCustomerId: effectiveOrgId,
-          metadata: {},
-          timestamp: new Date(),
-        },
-      ],
-    })
-    .catch(() => {
-      // Silently fail - don't break the user experience for metering errors
-    });
 
   return Response.json(
     { name, message: "Voice created successfully" },

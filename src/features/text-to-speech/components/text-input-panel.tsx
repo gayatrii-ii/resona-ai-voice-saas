@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useStore } from "@tanstack/react-form";
 
 import { SettingsDrawer } from "./settings-drawer";
@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTypedAppFormContext } from "@/hooks/use-app-form";
 
 import { 
-  COST_PER_UNIT, 
   TEXT_MAX_LENGTH
 } from "@/features/text-to-speech/data/constants";
 import { ttsFormOptions } from "./text-to-speech-form";
@@ -66,13 +65,8 @@ export function TextInputPanel() {
         {text.length > 0 ? (
           <div className="hidden items-center justify-between lg:flex">
             <Badge variant="outline" className="gap-1.5 border-dashed">
-              <Coins className="size-3 text-chart-5" />
-              <span className="text-xs">
-                <span className="tabular-nums">
-                  ${(text.length * COST_PER_UNIT).toFixed(4)}
-                </span>&nbsp;
-                estimated
-              </span>
+              <Sparkles className="size-3 text-primary" />
+              <span className="text-xs font-medium">Free & Unlimited</span>
             </Badge>
             <div className="flex items-center gap-3">
               <p className="text-xs tracking-tight">

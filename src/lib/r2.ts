@@ -1,18 +1,23 @@
-import { env } from "./env";
+function getSupabaseConfig() {
+  const supabaseUrl = (
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    ""
+  ).replace(/\/+$/, "");
 
-const supabaseUrl = (
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://placeholder.supabase.co"
-).replace(/\/+$/, "");
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "";
 
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  "placeholder";
+  const bucket =
+    process.env.SUPABASE_STORAGE_BUCKET ||
+    "resona-audio";
 
-const bucket = env.SUPABASE_STORAGE_BUCKET || "resona-audio";
+  return { supabaseUrl, supabaseKey, bucket };
+}
 
 type UploadAudioOptions = {
   buffer: Buffer;
@@ -25,6 +30,7 @@ export async function uploadAudio({
   key,
   contentType = "audio/wav",
 }: UploadAudioOptions): Promise<void> {
+  const { supabaseUrl, supabaseKey, bucket } = getSupabaseConfig();
   const cleanKey = key.replace(/^\/+/, "");
   const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${cleanKey}`;
 
@@ -47,6 +53,7 @@ export async function uploadAudio({
 }
 
 export async function deleteAudio(key: string): Promise<void> {
+  const { supabaseUrl, supabaseKey, bucket } = getSupabaseConfig();
   const cleanKey = key.replace(/^\/+/, "");
   const deleteUrl = `${supabaseUrl}/storage/v1/object/${bucket}`;
 
@@ -67,6 +74,7 @@ export async function deleteAudio(key: string): Promise<void> {
 }
 
 export async function getSignedAudioUrl(key: string): Promise<string> {
+  const { supabaseUrl, supabaseKey, bucket } = getSupabaseConfig();
   const cleanKey = key.replace(/^\/+/, "");
 
   try {

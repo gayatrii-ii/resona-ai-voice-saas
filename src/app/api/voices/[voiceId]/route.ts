@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { getSignedAudioUrl } from "@/lib/r2";
+import { fetchAudioStream } from "@/lib/r2";
 
 export async function GET(
   _request: Request,
@@ -36,8 +36,7 @@ export async function GET(
     return new Response("Voice audio is not available yet", { status: 409 });
   }
 
-  const signedUrl = await getSignedAudioUrl(voice.r2ObjectKey);
-  const audioResponse = await fetch(signedUrl);
+  const audioResponse = await fetchAudioStream(voice.r2ObjectKey);
 
   if (!audioResponse.ok) {
     return new Response("Failed to fetch voice audio", { status: 502 });

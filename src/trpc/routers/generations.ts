@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { TRPCError } from "@trpc/server";
 import { chatterbox } from "@/lib/chatterbox-client";
 import { prisma } from "@/lib/db";
-import { uploadAudio, getSignedAudioUrl } from "@/lib/r2";
+import { uploadAudio } from "@/lib/r2";
 import { TEXT_MAX_LENGTH } from "@/features/text-to-speech/data/constants";
 import { synthesizeSpeechFree } from "@/lib/free-tts";
 import { createTRPCRouter, orgProcedure } from "../init";
@@ -87,45 +87,17 @@ export const generationsRouter = createTRPCRouter({
 
       let buffer: Buffer | null = null;
 
-      // 1. Try Modal GPU Synthesis first
       try {
-        const signedVoiceUrl = await getSignedAudioUrl(voice.r2ObjectKey);
-        const { data, error } = await chatterbox.POST("/generate", {
-          body: {
-            prompt: input.text,
-            voice_key: signedVoiceUrl,
-            temperature: input.temperature,
-            top_p: input.topP,
-            top_k: input.topK,
-            repetition_penalty: input.repetitionPenalty,
-            norm_loudness: true,
-          },
-          parseAs: "arrayBuffer",
+        buffer = await synthesizeSpeechFree({
+          text: input.text,
+          voiceName: voice.name,
         });
-
-        if (!error && data instanceof ArrayBuffer && data.byteLength > 0) {
-          buffer = Buffer.from(data);
-        } else {
-          console.warn("Modal GPU unavailable, falling back to Free Neural TTS Engine:", error);
-        }
-      } catch (modalErr) {
-        console.warn("Modal GPU threw error, falling back to Free Neural TTS Engine:", modalErr);
-      }
-
-      // 2. Seamless Fallback to 100% Free Neural TTS Engine (No credit card or external GPU needed)
-      if (!buffer) {
-        try {
-          buffer = await synthesizeSpeechFree({
-            text: input.text,
-            voiceName: voice.name,
-          });
-        } catch (freeErr) {
-          console.error("Neural TTS synthesis error:", freeErr);
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to generate audio from voice engine",
-          });
-        }
+      } catch (err: any) {
+        console.error("Neural TTS synthesis error:", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate audio from voice engine",
+        });
       }
 
       let generationId: string | null = null;

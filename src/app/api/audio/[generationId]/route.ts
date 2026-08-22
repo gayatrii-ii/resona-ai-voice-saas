@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { getSignedAudioUrl } from "@/lib/r2";
+import { fetchAudioStream } from "@/lib/r2";
+
+export const maxDuration = 60;
 
 export async function GET(
   _request: Request,
@@ -27,8 +29,7 @@ export async function GET(
     return new Response("Audio is not available yet", { status: 409 });
   }
 
-  const signedUrl = await getSignedAudioUrl(generation.r2ObjectKey);
-  const audioResponse = await fetch(signedUrl);
+  const audioResponse = await fetchAudioStream(generation.r2ObjectKey);
 
   if (!audioResponse.ok) {
     return new Response("Failed to fetch audio", { status: 502 });
@@ -40,4 +41,4 @@ export async function GET(
       "Cache-Control": "private, max-age=3600",
     },
   });
-};
+}
